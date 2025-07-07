@@ -1,4 +1,8 @@
 import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from pages.trading_objectives_page import TradingObjectivesPage
+
 import asyncio
 from playwright.async_api import async_playwright
 import re
@@ -96,48 +100,34 @@ async def test_table(headless=True):
             await page.click('#ftmo-cookie-layer button', timeout=5000)
         except Exception:
             pass
+        page_obj = TradingObjectivesPage(page)
         for currency, balances in CURRENCIES.items():
             print(f"Testing currency: {currency}")
-            # Find and click the currency div by lowercase text
-            currency_divs = page.locator('div._btn_u4t34_18')
-            found = False
-            count = await currency_divs.count()
-            for i in range(count):
-                div = currency_divs.nth(i)
-                div_text = (await div.inner_text()).strip().lower()
-                if div_text == currency.lower():
-                    await div.click()
-                    found = True
-                    break
+            found = await page_obj.select_currency(currency)
             if not found:
+                currency_divs = page.locator('div._btn_u4t34_18')
+                count = await currency_divs.count()
                 all_divs = [await currency_divs.nth(i).inner_text() for i in range(count)]
                 print(f"[ERROR] Currency '{currency}' not found. Available: {all_divs}")
                 continue
             for balance in balances:
                 print(f"  Testing balance: {balance}")
-                locator = page.get_by_role("button", name=balance)
                 try:
-                    await locator.wait_for(state="visible", timeout=5000)
-                    await locator.click()
+                    await page_obj.select_balance(balance)
                 except Exception as e:
                     print(f"[WARNING] Balance button '{balance}' not found or not clickable for {currency}: {e}")
                     continue
                 await page.wait_for_timeout(500)  # Wait for table update
-                # Robust table validation by row id and column
                 key = (currency, balance)
                 if key in EXPECTED_VALUES:
                     for row_id, expected_cells in EXPECTED_VALUES[key].items():
-                        row = page.locator(f'div[id="{row_id}"]')
                         for col_idx, expected in enumerate(expected_cells, start=1):
-                            # Each step is in the 2nd, 3rd, 4th column (1-based)
-                            cell = row.locator(f'div._column_9hsjp_41:nth-child({col_idx+1}) div._cell_9hsjp_44:last-child')
-                            cell_text = (await cell.inner_text()).strip().lower()
+                            cell_text = await page_obj.get_table_cell(row_id, col_idx)
                             if row_id == "refundable-fee" and col_idx == 1:
                                 assert normalize(expected) in normalize(cell_text), f"Refundable Fee mismatch: expected '{expected}' in '{cell_text}' for {currency} {balance} Step {col_idx}"
                             else:
                                 assert normalize(expected) == normalize(cell_text), f"Value mismatch in row '{row_id}' col {col_idx}: expected '{expected}', got '{cell_text}' for {currency} {balance}"
                 else:
-                    # Fallback: check row presence using div-based selectors (not <table>)
                     for row_id in [
                         "trading-period",
                         "minimum-trading-days",
@@ -146,8 +136,7 @@ async def test_table(headless=True):
                         "profit-target",
                         "refundable-fee",
                     ]:
-                        row = page.locator(f'div[id="{row_id}"]')
-                        assert await row.is_visible(), f"Missing row: {row_id} for {currency} {balance}"
+                        assert await page_obj.row_is_visible(row_id), f"Missing row: {row_id} for {currency} {balance}"
         print("All currency/balance table checks passed.")
         await browser.close()
 

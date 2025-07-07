@@ -12,12 +12,17 @@ This project provides robust automated UI and acceptance tests for the "Trading 
 ## Project Structure
 ```
 FTMO/
-├── test_trading_objectives_table.py         # Standalone Playwright test script
 ├── features/
 │   ├── trading_objectives.feature           # Behave feature file (scenarios)
 │   └── steps/
 │       └── trading_objectives_steps.py      # Behave step definitions (async Playwright)
-└── .gitignore                              # Git ignore rules
+├── playwright/
+│   └── test_trading_objectives_table.py     # Standalone Playwright test script
+├── pages/
+│   └── trading_objectives_page.py          # Page Object for UI interactions
+├── .gitignore                              # Git ignore rules
+├── requirements.txt
+└── README.md
 ```
 
 ## Setup
