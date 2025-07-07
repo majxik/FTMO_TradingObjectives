@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Playwright
+playwright-report/
+playwright/.cache/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Jupyter
+*.ipynb_checkpoints/
+
+# Misc
+*.log
+*.sqlite3
+
+# Behave
+reports/
+
+# Node
+node_modules/
